@@ -1,0 +1,5851 @@
+#LyX 1.6.5 created this file. For more info see http://www.lyx.org/
+\lyxformat 345
+\begin_document
+\begin_header
+\textclass article
+\begin_preamble
+\usepackage[BoldFont,SlantFont,CJKchecksingle]{xeCJK}
+\setmainfont{DejaVu Serif}
+\setsansfont{DejaVu Sans}
+\setmonofont{DejaVu Sans Mono}
+\setCJKmainfont{SimSun}%中文衬线字体 Adobe宋体
+\setCJKsansfont{SimSun}%中文无衬线字体 Adobe黑体
+\setCJKmonofont{SimSun}%中文等宽字体 文泉驿等宽微米黑
+\punctstyle{banjiao}%半角字符
+\end_preamble
+\use_default_options true
+\language chinese-simplified
+\inputencoding utf8-plain
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family rmdefault
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\cite_engine basic
+\use_bibtopic false
+\paperorientation portrait
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation skip
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\author "" 
+\author "" 
+\end_header
+
+\begin_body
+
+\begin_layout Title
+通信顺序进程
+\end_layout
+
+\begin_layout Section
+进程
+\end_layout
+
+\begin_layout Subsection
+引言
+\end_layout
+
+\begin_layout Standard
+暂且先把计算机和计算机程序设计忘记一小会儿，让我们仔细想想身边那些真实的事物，它们总是以一些特有的行为模式，不断的在运动，相互通信，并与我们进行交互。想想我们常
+见的钟表，计数器，还有电话机，棋牌游戏，和自动售货机，等等。为了描述他们的行为模式，我们首先要确定我们对哪种类型的事件或动作感兴趣，然后为每类赋予一个唯一的名字
+。就拿一个简单的自动售货机来说，有两类事件：
+\end_layout
+
+\begin_layout Enumerate
+coin 往自动售卖机里投一枚硬币
+\end_layout
+
+\begin_layout Enumerate
+choc 机器自动弹出一块巧克力
+\end_layout
+
+\begin_layout Standard
+复杂一点的，会有更多类的事件
+\end_layout
+
+\begin_layout Enumerate
+in1p 投入一枚一便士的硬币
+\end_layout
+
+\begin_layout Enumerate
+in2p 投入两枚一便士的硬币
+\end_layout
+
+\begin_layout Enumerate
+small 机器弹出一小块饼干或者酷奇饼
+\end_layout
+
+\begin_layout Enumerate
+large 机器弹出一大块饼干或者酷奇饼
+\end_layout
+
+\begin_layout Enumerate
+out1p 机器弹出一枚一便士的硬币
+\end_layout
+
+\begin_layout Standard
+注意每一个事件的名称都代表一个事件的类型，也许同一类事件会出现很多次，只是时间不同而已。就像同一个字母h，也可以在一本书里出现很多次。
+\end_layout
+
+\begin_layout Standard
+用来描述一个对象所有事件的名称的集合，称为这个对象的字母表。字母表是对象的预定义属性，所以逻辑上讲，如果一个事件的名称不在这个对象的字母表里，那就不属于这个对象
+。例如一个专售巧克力的自动售卖机不可能售出一台玩具军舰来。但它的逆命题不成立，一个专售巧克力的机器可能不再卖巧克力了，可能是它里面没有巧克力，或者它坏了，又或者
+没人想吃巧克力，等等。但一旦决定将choc放到机器的字母表里，即使这个事件从来就没发生过，但它仍然被认为是这台机器的一个事件。
+\end_layout
+
+\begin_layout Standard
+字母表的选择通常是经过有意简化的，对于那些我们不感兴趣的属性和动作可以忽略掉。例如我们并没有描述自动售卖机的颜色，重量，形状，还有一些与自动售卖机的运作密切相关
+的事件，因为这些东西也许用户并不关心(或者说不应该让用户操心这些事情)
+\end_layout
+
+\begin_layout Standard
+在一个对象的生命周期里，它的每一个事件的实际发生都应该被看作是瞬间完成的或者是没有时延的原子动作。持续的动作应该被看成是一对事件，一个表示开始，另一个表示结束。
+动作的持续时间表示为从开始事件发生到结束事件发生之间的时间间隔。在这段间隔里，可能有其他的事件发生，两个持续的动作可能在时间区间上有重叠，例如其中一个动作的开始
+事件发生在另一个动作的结束事件之前。
+\end_layout
+
+\begin_layout Standard
+另一个我们有意忽略的细节就是事件发生的精确时间，这样做的好处是简化了设计和论证的过程，并且可以应用于任何速度和性能的物理计算系统。就算响应时间是至关重要的，但它
+和语言的设计本身是没有关系的，高级编程语言设计的成功要素就是要独立于时钟。
+\end_layout
+
+\begin_layout Standard
+忽略了时间的概念，我们就不用考虑是否有两个事件同时发生这种问题。如果同时发生这个概念很重要(比如在同步里)，我们可以表示为单个事件发生了，否则，我们就将两个“可
+能”同时发生的事件以另一种顺序记录下来。 对于字母表的选择，事件的因果关系不重要，我们没必要去区分一个事件是由某个对象(比如choc)引发的还是这个对象外部的代
+理人(如coin)引发的。这样做能大大的简化理论及其应用
+\end_layout
+
+\begin_layout Standard
+从现在开始，我们使用进程这个词来表示对象的行为模式，进程可以表示为由对象字母表中的事件组成的有限集合。我们约定：
+\end_layout
+
+\begin_layout Enumerate
+全小写的单词表示不同的事件，如
+\begin_inset Formula $coin,choc,in2p,out2p$
+\end_inset
+
+，当然小写的字母也是，如
+\begin_inset Formula $a,b,c,d,e$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+全大写的单词表示以被定义的特定进程，如 
+\begin_inset Formula $VMS$
+\end_inset
+
+ 简单的自动售卖机，
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $VMC$
+\end_inset
+
+复杂的自动售卖机，而大写字母如P，Q，R则表示任意的进程
+\end_layout
+
+\begin_layout Enumerate
+字母x、y、z表示事件的变量
+\end_layout
+
+\begin_layout Enumerate
+字母A、B、C表示事件集合
+\end_layout
+
+\begin_layout Enumerate
+字母X、Y表示进程变量
+\end_layout
+
+\begin_layout Enumerate
+进程P的字母表记作αP，例如
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $\text{α}VMS={coin,chos}$
+\end_inset
+
+，
+\begin_inset Formula $\text{α}VMC={in1p,in2p,small,large,out1p}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+具有自己的字母表但是从不执行字母表中任意一个事件的进程，我们称之为STOP
+\begin_inset Formula $_{\text{A}}$
+\end_inset
+
+，它描述了一个已损坏了的对象的行为：尽管进程已经具备执行字母表中事件的实际能力，但它从来没运用过这些能力。具有不同字母表的对象是不同的，即使它不做任何事情，比如
+\end_layout
+
+\begin_layout Standard
+STOP
+\begin_inset Formula $_{\text{αVMS}}$
+\end_inset
+
+ = {coin,chos}
+\end_layout
+
+\begin_layout Standard
+αVMC = {in1p,in2p,small,large,out1p}
+\end_layout
+
+\begin_layout Standard
+具有自己的字母表但是从不执行字母表中任意一个事件的进程，我们称之为STOP
+\begin_inset Formula $_{\text{A}}$
+\end_inset
+
+，它描述了一个已损坏了的对象的行为：尽管进程已经具备执行字母表中事件的实际能力，但它从来没运用过这些能力。具有不同字母表的对象是不同的，即使它不做任何事情，所以
+就算STOP
+\begin_inset Formula $_{\text{\text{α}VMS}}$
+\end_inset
+
+本来是可以给出一块巧克力的，而STOP
+\begin_inset Formula $_{\text{\text{α}VMC}}$
+\end_inset
+
+却永远不可能给出一块巧克力，但是这两个进程也是不同的。顾客即使不知道这两台机器坏了，也应该清楚这些事实。
+\end_layout
+
+\begin_layout Standard
+下面，我们将定义一些简单的记号，能够更好的描述一个对象成功的做了哪些事情
+\end_layout
+
+\begin_layout Subsubsection
+前缀式
+\end_layout
+
+\begin_layout Standard
+设
+\begin_inset Formula $x$
+\end_inset
+
+为一个事件，
+\begin_inset Formula $P$
+\end_inset
+
+为一进程，则
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $x\rightarrow P$
+\end_inset
+
+ 读做 x然后P
+\end_layout
+
+\begin_layout Standard
+进程
+\begin_inset Formula $x\rightarrow P$
+\end_inset
+
+强调了一个对象首先会执行事件
+\begin_inset Formula $x$
+\end_inset
+
+，并且其他的行为与进程
+\begin_inset Formula $P$
+\end_inset
+
+的描述一致。我们定义进程
+\begin_inset Formula $x\rightarrow P$
+\end_inset
+
+和进程
+\begin_inset Formula $P$
+\end_inset
+
+有相同的字母表，所以只有当
+\begin_inset Formula $x$
+\end_inset
+
+在
+\begin_inset Formula $P$
+\end_inset
+
+的字母表内时，这个记法才有意义。更正式一点：
+\end_layout
+
+\begin_layout Standard
+当
+\begin_inset Formula $x\in\alpha P$
+\end_inset
+
+时，
+\begin_inset Formula $\alpha(x\rightarrow P)=\alpha P$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Description
+举例
+\end_layout
+
+\begin_layout Enumerate
+一台简单的自动售卖机在损坏之前接收了一枚硬币，可以记为 
+\begin_inset Formula $coin\rightarrow STOP_{\alpha VMS}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+一台简单的自动售卖机在损坏前成功地为两位顾客提供了服务，可以记为
+\begin_inset Formula $coin\rightarrow choc\rightarrow chin\rightarrow choc\rightarrow STOP_{\alpha VMS}$
+\end_inset
+
+ 最初，机器只有从币槽里接收到一枚硬币后才会送出巧克力，当第一枚硬币投入后，币槽关闭，直到机器送出了巧克力才会打开，所以这机器只允许一次一次的来，不能连续投两个
+硬币然后给你两块巧克力。后面我们会省略其中的括号，按照惯例，
+\begin_inset Formula $\rightarrow$
+\end_inset
+
+是右结合算子。
+\end_layout
+
+\begin_layout Enumerate
+一个棋子从棋盘的左下方开始移动，每次移动只允许向上或者向右移到相邻的空白方格内
+\begin_inset Formula $\alpha CTR=\{up,right\}$
+\end_inset
+
+，
+\begin_inset Formula $CTR=(right\rightarrow up\rightarrow right\rightarrow right\rightarrow STOP_{\alpha CTR})$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+注意
+\begin_inset Formula $\rightarrow$
+\end_inset
+
+算子总是将单个事件放在左侧，将进程放到它的右侧，如果
+\begin_inset Formula $P$
+\end_inset
+
+和
+\begin_inset Formula $Q$
+\end_inset
+
+都是进程，那么这种写法
+\begin_inset Formula $P\rightarrow Q$
+\end_inset
+
+是错误的。正确的语法会在第五章描述，类似地，如果
+\begin_inset Formula $x$
+\end_inset
+
+和
+\begin_inset Formula $y$
+\end_inset
+
+是事件，
+\begin_inset Formula $x\rightarrow y$
+\end_inset
+
+也是错误的，正确的写法应该是
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $x\rightarrow y\rightarrow STOP$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+这样我们就将事件和进程的概念区分开了，一个进程也许执行多个事件，或者什么也不做。
+\end_layout
+
+\begin_layout Subsubsection
+递归式
+\end_layout
+
+\begin_layout Standard
+使用前缀式可以描述一个最终会结束的进程的行为，但是假如要将一个自动售卖机整个生命周期的行为都描述出来，就会显得非常冗长。所以我们需要一种短得多的记法将那些重复的
+行为描述出来，最好这些记法不需要事先决定对象的生命周期长短，这样我们就能描述一些不受时间限制，可以持续运作并不断和它们的环境进行交互的对象了。想一下钟，最有可能
+不停地运作的对象，如果不考虑上弦的动作，它只会滴答地走
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\alpha CLOCK=\{tick\}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+再假设还有另一个对象，这个对象除了会先滴答走一下，然后其他的行为与钟无异
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $tick\rightarrow CLOCK$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+我们无法严格地区分这两个对象的行为，所以有
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $CLOCK=(tick\rightarrow CLOCK)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+我们可以将这个作为钟行为的一个隐式定义，就像
+\begin_inset Formula $2$
+\end_inset
+
+的平方根可以定义为下列方程式中
+\begin_inset Formula $x$
+\end_inset
+
+的正数解一样
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $x=x_{2}+x-2$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+可见由钟的方程式，利用一些简单的等式代换，我们可以得到一些显而易见的结果
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $CLOCK=(tick\rightarrow CLOCK)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $=(tick\rightarrow tick\rightarrow CLOCK)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $=(tick\rightarrow tick\rightarrow tick\rightarrow CLOCK)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+以此类推。这个方程式还可以不断地展开，永无止境，现在我们用一种更有效的方式来定义它
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $tick\rightarrow tick\rightarrow tick\rightarrow\ldots$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+同理，也可以把2的平方根看作是一个有限小数
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $1.414\ldots$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+只有当方程式右边所有递归出现的进程名前面至少有一个事件时，我们才可以使用这种自引用的递归方式来定义进程。例如，下面这个递归方程
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $X=X$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+并没有成功定义任何东西，因为这个方程的解是任意的。我们把这些包含前缀的进程表达式称为卫式。如果
+\begin_inset Formula $F(X)$
+\end_inset
+
+是一个包含进程名
+\begin_inset Formula $X$
+\end_inset
+
+的卫式表达式，且
+\begin_inset Formula $A$
+\end_inset
+
+是
+\begin_inset Formula $X$
+\end_inset
+
+的字母表，则我们可以断言
+\begin_inset Formula $X=F(X)$
+\end_inset
+
+有唯一解。为了方便起见，我们将它的解表示为
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\mu X:A\bullet F(X)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+这里
+\begin_inset Formula $X$
+\end_inset
+
+是局部名(约束变量)，可以随时更换，即
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\mu X:A\bullet F(X)=\mu Y:A\bullet F(Y)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+这个方程式是成立的，因为可以证明
+\begin_inset Formula $X=F(X)$
+\end_inset
+
+的解和
+\begin_inset Formula $Y=F(Y)$
+\end_inset
+
+的解是一样的。后面的章节我们可能用方程式又或者使用
+\begin_inset Formula $\mu$
+\end_inset
+
+来给出进程的递归定义，哪个方便就用哪个。就
+\begin_inset Formula $\mu X:A\bullet F(X)$
+\end_inset
+
+来说，如果可以根据进程的上下文信息看出
+\begin_inset Formula $A$
+\end_inset
+
+是字母表话，我们就省略
+\begin_inset Formula $A$
+\end_inset
+
+不写。
+\end_layout
+
+\begin_layout Description
+举例
+\end_layout
+
+\begin_layout Enumerate
+一个永远都不会停的钟，它的递归定义是
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $CLOCK=\mu X:\{tick\}\bullet(tick\to X)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+最后，一台简单的自动售卖机，你要多少巧克力它就能提供多少
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $VMS=(coin\to(choc\to VMS))$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+或者使用μ的写法更正式一点
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $VMS=\mu X:{coin,choc}\bullet(coin\to(choc\to X))$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+一台找零钱机器，可以不停地换5便士
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $\alpha CH5A={in5p,out2p,out1p}$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $CH5A=(in5p\to out2p\to out1p\to out2p\to CH5A)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+另一台不同的找零钱机器，但字母表和前者相同
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $CH5B=(in5p\to out1p\to out1p\to out1p\to out2p\to CH5B)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+前面我们断言约束方程有解，可能这个解是唯一的，可以使用等式代换的方法进行非形式证明。每一次等式代换都是用等式右边将所有出现的进程名替换掉，这样定义进程行为的表达
+式就会越来越长，相当于描述了一个进程最初时很长那部分的行为，任何有限数量个的行为都可以通过这种方式来确定。如果两个对象任意时刻的表现是一样的，我们就说这两个对象
+有相同的行为，也就是同属一个进程。有些人可能觉得这些推理难以理解或者说服力不足，那就先将它当成是公理吧，后面我们将看到这些推论的价值和意义会越来越明显。现在我们
+还没有关于进程准确的数学定义，自然就没有更形式化的证明，但我们会在$2.8.3节给出这一证明。这里我们给出的递归方程式都是以约束性质为基础的，在$3.8节我们讨论一种
+非约束的递归。
+\end_layout
+
+\begin_layout Subsubsection
+选择
+\end_layout
+
+\begin_layout Standard
+使用前缀和递归的方法我们只能描述一个对象一连串的行为，但是在真实世界里，还有很多对象通过和它们所处的环境进行交互，以此来决定自己的行为。例如，一台自动售卖机可能
+有两个币槽，一个只让投两便士的硬币，一个只让投一便士的硬币，然后让顾客来决定触发哪个事件了。假设x和y是两个不同的事件，则有
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $(x\to P|y\to Q)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+如果第一个事件是
+\begin_inset Formula $x$
+\end_inset
+
+，那其余的行为可以通过
+\begin_inset Formula $P$
+\end_inset
+
+来描述，如果是
+\begin_inset Formula $y$
+\end_inset
+
+，可以通过
+\begin_inset Formula $Q$
+\end_inset
+
+来描述。因为
+\begin_inset Formula $x$
+\end_inset
+
+和
+\begin_inset Formula $y$
+\end_inset
+
+是不同的事件，所以对
+\begin_inset Formula $P$
+\end_inset
+
+和
+\begin_inset Formula $Q$
+\end_inset
+
+的选择取决于第一个发生的事件是什么，也就是
+\begin_inset Formula $\alpha(x\to P|y\to Q)=\alpha P$
+\end_inset
+
+，所以有
+\begin_inset Formula $\{x,y\}\subseteq\alpha P\Rightarrow\alpha P=\alpha Q$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+我们将
+\begin_inset Formula $|$
+\end_inset
+
+读作或者，
+\begin_inset Formula $x$
+\end_inset
+
+然后
+\begin_inset Formula $P$
+\end_inset
+
+或者
+\begin_inset Formula $y$
+\end_inset
+
+然后
+\begin_inset Formula $Q$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Description
+举例
+\end_layout
+
+\begin_layout Enumerate
+定义一个进程，描述棋子在这块板上可能的轨迹
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $(up\to STOP|right\to right\to up\to STOP)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+一台可以提供两种方法来找5便士零钱的机器，并由用户来选择
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $CH5C=in5p\to(out1p\to out1p\to out1p\to out2p\to CH5C|out2p\to out1p\to out2p\to CH5C)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+一台可以提供巧克力或者太妃糖的自动售卖机
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $VMCT=\mu X\bullet coin\to(choc\to X|toffee\to X)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+一台更复杂的自动售卖机，用户可以选择怎么投币，想要什么食物，已经该找哪些零钱。
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $VMC=(in2p\to(large\to VMC|small\to out1p\to VMC)$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $|in1p\to(small\to VMC|in1p\to(large\to VMC|in1p\to STOP)))$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+这台机器有一个设计上的缺陷，就是不能投三枚
+\begin_inset Formula $1$
+\end_inset
+
+便士的硬币。不过改一下用户手册要比改进机器容易多了，所以我们可以在机器上加一条注意事项 WARNING: do not insert three
+ pennies in a row.
+\end_layout
+
+\begin_layout Enumerate
+一台可以先提供巧克力再付款的自动售卖机这个设计的前提是它相信它的客户一定会付款的。（如果有个顾客吃完巧克力结果忘了付款，那这台机器就over了，哈哈）
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $VMCRED=\mu X\bullet(coin\to choc\to X|choc\to coin\to X)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+对
+\begin_inset Formula $VMCRED$
+\end_inset
+
+的改进，为了避免损失，品尝之前需要先付点钱，付了多少就让你尝多少。
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $VMS2=(coin\to VMCRED)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+一个拷贝进程执行以下事件
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $in.0$
+\end_inset
+
+ 输入通道输入0
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $in.1$
+\end_inset
+
+ 输入通道输入1
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $out.0$
+\end_inset
+
+ 输出通道输出0
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $out.1$
+\end_inset
+
+ 输出通道输出1
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+进程的行为就是不断重复地执行一对输入输出事件，输入什么就输出什么，所以有：
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $COPYBIT=\mu X\bullet(in.0\to out.0\to X|in.1\to out.1\to X)$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+要注意的一点是，这个进程的输入是由环境来决定的，但输出不是，在第四章我们讨论如何解决通信的问题时，这是输入和输出的主要区别。
+\end_layout
+
+\begin_layout Standard
+选择的定义可以推广到两个以上的情形，例如
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $(x\to P|y\to Q|...|z\to R)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+注意选择符号
+\begin_inset Formula $|$
+\end_inset
+
+并不是进程的算子，所以从语法上看
+\begin_inset Formula $P|Q$
+\end_inset
+
+或者
+\begin_inset Formula $(x\to P|x\to Q)$
+\end_inset
+
+的写法都是错误的，因为没法选择第一个事件。除非引入非确定性，这将在$3.3节讨论。同时，如果
+\begin_inset Formula $x,y,z$
+\end_inset
+
+是三个不同的事件，则
+\begin_inset Formula $(x\to P|y\to Q|z\to R)$
+\end_inset
+
+应该看成是一个算子，这个算子有三个变元，千万不能写成下面这样，从语法上来将那是错误的
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $(x\to P|(y\to Q|z\to R))$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+通常，如果
+\begin_inset Formula $B$
+\end_inset
+
+是任意事件的集合，
+\begin_inset Formula $P(x)$
+\end_inset
+
+为
+\begin_inset Formula $B$
+\end_inset
+
+中每一个事件
+\begin_inset Formula $x$
+\end_inset
+
+定义了一个进程，则有
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $(x:B\to P(x))$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+我们读作
+\begin_inset Formula $x$
+\end_inset
+
+属于
+\begin_inset Formula $B$
+\end_inset
+
+然后
+\begin_inset Formula $x$
+\end_inset
+
+的进程，这个表达式是进程的选择性定义，其中
+\begin_inset Formula $x$
+\end_inset
+
+是局部变量。进程所在的环境可以选择执行
+\begin_inset Formula $B$
+\end_inset
+
+中任意一个事件
+\begin_inset Formula $y$
+\end_inset
+
+，然后其他的行为就会和
+\begin_inset Formula $P(y)$
+\end_inset
+
+进程一样。集合
+\begin_inset Formula $B$
+\end_inset
+
+相当于是进程的开始菜单。
+\end_layout
+
+\begin_layout Description
+举例
+\end_layout
+
+\begin_layout Enumerate
+一个进程，在任何时候都可以执行它字母表里的任意一个事件
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $\alpha RUN_{A}=A$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $RUN_{A}=(x:A\to RUN_{A})$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+如果A里只有一个事件，则 
+\begin_inset Formula $(x:{e}\to P(x))=(e\to P(e))$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+又或者
+\begin_inset Formula $A$
+\end_inset
+
+里没有事件时，则 
+\begin_inset Formula $(x:{}\to P(x))=(y:{}\to Q(y))=STOP$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+我们可以使用更一般的记法来定义双目选择算子
+\begin_inset Formula $\mid$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $(a\to P|b\to Q)=(x:B\to R(x))$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+其中
+\begin_inset Formula $B={a.b}$
+\end_inset
+
+，
+\begin_inset Formula $R(x)$
+\end_inset
+
+为如果
+\begin_inset Formula $x=a$
+\end_inset
+
+则执行
+\begin_inset Formula $P$
+\end_inset
+
+否则执行
+\begin_inset Formula $Q$
+\end_inset
+
+。三个或者三个以上的选择也可以类似地表达出来，我们将前缀和
+\begin_inset Formula $STOP$
+\end_inset
+
+看成是一般选择记法的特殊情况，这在进程的形式化定义($1.3节)以及进程的实现($1.4节)有非常大的好处。
+\end_layout
+
+\begin_layout Subsubsection
+相互递归
+\end_layout
+
+\begin_layout Standard
+上一小节我们了解了进程的递归定义，我们还可以很容易地将它推广到用来解决有多个未知数的联立方程，但前提条件是，所有等式的右边必须是卫式的，而且每个未知进程恰好在方
+程的左边出现一次。
+\end_layout
+
+\begin_layout Standard
+举例
+\end_layout
+
+\begin_layout Enumerate
+饮料机上有一个一字开关（所谓一字开关就是上下掰或者左右掰的），现在假如开关是上下掰的，上边标有
+\begin_inset Formula $ORANGE$
+\end_inset
+
+，下边标有
+\begin_inset Formula $LEMON$
+\end_inset
+
+。则开关的动作定义为
+\begin_inset Formula $setorange$
+\end_inset
+
+和
+\begin_inset Formula $setlemon$
+\end_inset
+
+。饮料机弹出饮料的动作定义为
+\begin_inset Formula $orange$
+\end_inset
+
+和
+\begin_inset Formula $lemon$
+\end_inset
+
+。初始情况下开关处于中间位置，既不指向
+\begin_inset Formula $ORANGE$
+\end_inset
+
+也不指向
+\begin_inset Formula $LEMON$
+\end_inset
+
+，而且一旦拨动开关就再也回不到这个初始位置上。以下是定义这三个进程的字母表和行为的进程
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $\alpha DD=\alpha G=\alpha W={setorange,setlemon,coin,orange,lemon}$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $DD=(setorange\to G|setlemon\to W)$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $G=(coin\to orange\to G|setlemon\to W)$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $W=(coin\to lemon\to W|setorange\to G)$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+一般来说，当第一个事件发生后，饮料机要么处于
+\begin_inset Formula $G$
+\end_inset
+
+状态要么处于
+\begin_inset Formula $W$
+\end_inset
+
+状态。这两种状态分别对应给出不同的饮料，或者再次被切换到另一个状态。
+\end_layout
+
+\begin_layout Standard
+利用下标，我们可以写出无穷方程组了。
+\end_layout
+
+\begin_layout Description
+举例
+\end_layout
+
+\begin_layout Enumerate
+假设有这么一个对象，以地面为起点，向上运动。此后任意时刻，均可以向上或者向下，除非它落到地上（也就不能再往下运动了）。这对象在地上时，还能向四周运动。现在我们利
+用下标来描述对象包含
+\begin_inset Formula $n$
+\end_inset
+
+次运动的行为，
+\begin_inset Formula $n$
+\end_inset
+
+属于
+\begin_inset Formula ${0,1,2,\cdots}$
+\end_inset
+
+。初始状态为
+\begin_inset Formula $CT_{0}=(up\to CT_{1}|around\to CT_{0})$
+\end_inset
+
+，剩下的无穷方程组为
+\begin_inset Formula $CT_{n+1}=(up\to CT_{n+2}|down\to CT_{n})$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+其中
+\begin_inset Formula $n$
+\end_inset
+
+为自然数
+\begin_inset Formula $0,1,2,\dots$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+归纳定义的方程式是否有效，一般情形下不是看每个方程右侧所用的下标是否比左侧的小。而这里，
+\begin_inset Formula $CT_{n-1}$
+\end_inset
+
+却是由
+\begin_inset Formula $CT_{n+2}$
+\end_inset
+
+给出的，因此，这个定义式只能被看作是一个无穷的级联递归定义方程组，它是否有效就要看每个方程右侧是否是卫式的
+\end_layout
+
+\begin_layout Subsection
+图解
+\end_layout
+
+\begin_layout Standard
+用树形结构作为进程的示意图，有时候是很有帮助的，树形图由箭头和一些小圆圈连接而成，在状态机的传统术语里，圆圈代表进程的各个状态，箭头表示状态之间的转换。树根上的
+圆圈（一般画在树形图的上方）是初始状态，整个进程沿着箭头的方向进行，每个箭头旁边都有实现状态转换时发生的事件。在由同一个节点引出的箭头必须标有不同的事件。
+\end_layout
+
+\begin_layout Standard
+举例（1.1.1节中的X1，X2和1.1.3节中的X3）
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename Z:/1.2.1.png
+	scale 40
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+这三个例子中，每个树的各个分支都以
+\begin_inset Formula $STOP$
+\end_inset
+
+结束，
+\begin_inset Formula $STOP$
+\end_inset
+
+表示一个不引出箭头的圆圈。如果用图示法表示具有无限行为的进程，我们得引入另外一个约定，即有一种没有任何标记的箭头，它可沿树上叶子节点绕回到前面的某个圆圈去。这个
+约定是说，当一个进程走到了在这种箭头的尾部所在的节点时，它就立即神不知鬼不觉地回到该箭头所指向的节点。
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename Z:/1.2.2.png
+	scale 40
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+显然，这两个不同的示意图所描绘的是同一个进程。然后，要用图士的方法来证明它们是相同的，则是很不容易的事，这是图示法的一个弱点。
+\end_layout
+
+\begin_layout Standard
+图示法的另一个弱点就是不能描绘具有很多个甚至无穷个状态的进程（如下图所示），如CT0。要画出CT0的整个示意图，实在没有那么多的地方。就算只有65535种不同的
+状态转换，就够我们画好一阵子了。
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename Z:/1.2.3.png
+	scale 40
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+定律
+\end_layout
+
+\begin_layout Standard
+尽管到目前为止我们所引入的符号集是很有限的，但是我们仍然可以用很多不同的方式来描述同一个行为。例如，很明显，事件选择之间是没有次序关系的。
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $(x\to P|y\to Q)=(y\to Q|x\to P)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+另一方面，能做事的进程和什么也不能做的进程是不可能相等的。
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $(x\text{→}P)\neq STOP$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+要正确地理解符号的含义并且有效的使用它们，我们就必须学会识别哪些表达式能够描述同一个对象，哪些又不能描述同一个对象。就像稍微知道点数学的人都应该知道
+\begin_inset Formula $(x+y)$
+\end_inset
+
+和
+\begin_inset Formula $(y+x)$
+\end_inset
+
+是相同的。我们可以通过一些类似与这种表达式的数学定律来证明具有相同字母表的进程是否相同。
+\end_layout
+
+\begin_layout Standard
+第一条定律是关于选择算子的（1.1.3）：
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+L1：对于两个选择性定义的进程，只有在它们每一步选择都相同时，两个进程才是相同。
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Formula $(x:A\to P(x))=(y:B\to Q(y))\equiv(A=B\text{∧}\text{∀}x:A\bullet P(x)=Q(x))$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+方程式两边进程的字母表相同，这一点以后不再作说明。
+\end_layout
+
+\begin_layout Standard
+L1有几个推论
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+推论L1A：
+\begin_inset Formula $STOP\neq(d\to P)$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+证明：
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $LHS=(x:{}\to P)$
+\end_inset
+
+ 由1.1.3节中的定义可得
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $\neq(x:{d}\text{→}P)$
+\end_inset
+
+ 因为
+\begin_inset Formula ${}\text{≠}{d}$
+\end_inset
+
+ 
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $=RHS$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+推论L1B：如果
+\begin_inset Formula $c\text{≠}d$
+\end_inset
+
+，则
+\begin_inset Formula $L1B(c\text{→}P)\neq(d\text{→}Q)$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+证明：
+\begin_inset Formula ${c}\text{≠}{d}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+推论L1C：
+\begin_inset Formula $(c\text{→}P|d\text{→}Q)=(d\text{→}Q|c\text{→}P)$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+证明： 定义
+\begin_inset Formula $R(x)=P$
+\end_inset
+
+，如果
+\begin_inset Formula $x=c$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $=Q$
+\end_inset
+
+ 如果
+\begin_inset Formula $x=d$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $LHS=(x:{c,d}\text{→}R(x))=(x:{d,c}\text{→}R(x))$
+\end_inset
+
+ 因为
+\begin_inset Formula ${c,d}={d,c}$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $=RHS$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+推论L1D：
+\begin_inset Formula $L1D(c\text{→}P)=(c\text{→}Q)\text{≡}P=Q$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+证明：
+\begin_inset Formula ${c}={c}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+用这条定律和这几个推论，我们可以证明一些比较简单的命题。
+\end_layout
+
+\begin_layout Description
+举例
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Formula $(coin\text{→}choc\text{→}coin\text{→}choc\text{→}STOP)\text{≠}(coin\text{→}STOP)$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+证明：先用L1D再用L1A
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Formula $\text{\mu}X\text{•}(coin\text{→}(choc\text{→}X|toffee\text{→}X))=\text{\mu}X\text{•}(coin\text{→}(toffee\text{→}X|choc\text{→}X))$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+证明：由L1C可证得
+\end_layout
+
+\begin_layout Standard
+但是要证明进程递归定义里的其他一般性定理，我们必须再来引入另一条定律，即每个卫式的递归方程有唯一解
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+L2：如果F(X)是卫式表达式，则有 
+\begin_inset Formula $(Y=F(Y))\text{≡}(Y=\text{μ}X\text{•}F(X))$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+还有一条间接但非常重要的，能标明
+\begin_inset Formula $\mu X\bullet F(X)$
+\end_inset
+
+确实是相关方程的解。
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+L2A：
+\begin_inset Formula $\text{\mu}X\text{•}F(X)=F(\mu X\text{•}F(X))$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Description
+举例
+\end_layout
+
+\begin_layout Enumerate
+假设
+\begin_inset Formula $VM1=(coin\text{→}VM2)$
+\end_inset
+
+和
+\begin_inset Formula $VM2=(choc\text{→}VM1)$
+\end_inset
+
+成立，请证明
+\begin_inset Formula $VM1=VMS$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+证明：
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $VM1=(coin→VM2)\backslash)\backslash(=(coin→(choc→VM1))$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+这是一个递归方程，解为
+\begin_inset Formula $VM1$
+\end_inset
+
+。由于方程是卫式的，因此它只有一个解，所以
+\begin_inset Formula $VM1$
+\end_inset
+
+和
+\begin_inset Formula $VMS$
+\end_inset
+
+只是这个唯一解的不同名字而已。就算不用证明，很明显这个命题是成立的，我们证明它的唯一目的就是通过举例，说明这些法则足以证明这类事实。当我们使用一些不怎么明显的定
+律去证明一个很明显的命题时，一定要细心检查每一步以防止循环论证。
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+说到这我忽然想起了初中时查词典，有时候你会发现词语的解释里居然会出现词语本身的情况，就是这个道理。
+\end_layout
+
+\begin_layout Standard
+定律L2还可以推广到相互递归的情况，对于一组相互递归的等式，使用下标来描述成一个更通用的形式，如下：
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $X_{i}=F(i,X)$
+\end_inset
+
+ for all i in S
+\end_layout
+
+\begin_layout Standard
+其中：
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $S$
+\end_inset
+
+是一个索引集合，集合中的每一个数字都对应一个等式
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $X$
+\end_inset
+
+是进程数组，下标的域为
+\begin_inset Formula $S$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $F(i,X)$
+\end_inset
+
+是卫式表达式
+\end_layout
+
+\begin_layout Standard
+任意一个方程组，只要满足这几个条件，那它必定有唯一解，也就是我们的第三个定律：
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+L3：如果
+\begin_inset Formula $(\text{∀}i:S\text{•}(Xi=F(i,X)\text{∧}Yi=F(i,Y)))$
+\end_inset
+
+，则
+\begin_inset Formula $X=Y$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+进程的实现
+\end_layout
+
+\begin_layout Standard
+到目前为止，所有的进程
+\begin_inset Formula $P$
+\end_inset
+
+都可以写成以下这种方式：
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $(x:B\to F(x))$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+其中
+\begin_inset Formula $F$
+\end_inset
+
+是字母表中的符号到进程的映射函数，
+\begin_inset Formula $B$
+\end_inset
+
+是字母表，也就是事件集合，如果
+\begin_inset Formula $B$
+\end_inset
+
+为空，标明这是一个
+\begin_inset Formula $STOP$
+\end_inset
+
+进程，如果
+\begin_inset Formula $B$
+\end_inset
+
+中只有一个事件，那这个事件是进程的前缀，又或者
+\begin_inset Formula $B$
+\end_inset
+
+中有多个事件，例如进程的选择性定义。
+\end_layout
+
+\begin_layout Standard
+因为递归方程也必须是卫式的，所以进程的递归定义也可以这么描述：
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\text{\mu}X\text{•}(x:B\text{→}F(x,X))$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+还可以利用推论L2A展开成：
+\begin_inset Formula $(x:B\text{→}F(x,\text{\mu}X\text{•}(x:B\text{→}F(x,X))))$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+这样每个进程都是由函数F和它的定义域
+\begin_inset Formula $B$
+\end_inset
+
+组成，
+\begin_inset Formula $B$
+\end_inset
+
+是进程初始化时执行的事件集合，也称为进程的字母表，对于
+\begin_inset Formula $B$
+\end_inset
+
+中的每一个事件
+\begin_inset Formula $x$
+\end_inset
+
+，
+\begin_inset Formula $F(x)$
+\end_inset
+
+定义了进程执行
+\begin_inset Formula $x$
+\end_inset
+
+之后的一系列行为。
+\end_layout
+
+\begin_layout Standard
+用函数来表示进程，像LISP这种函数式语言就是这么干的。而且字母表中的符号也就是函数的参数。多么深刻的理解的，非常的赞。
+\end_layout
+
+\begin_layout Standard
+如果给定的符号并不在进程的字母表里，则函数会返回一个特定的
+\begin_inset Formula $"BLEEP$
+\end_inset
+
+符号（也就是滴一声），例如，
+\begin_inset Formula $STOP$
+\end_inset
+
+进程不会发生任何事件，所以有
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $STOP=\lambda x\text{•}"BLEEP$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+但如果在的话，函数就会返回另外一个函数，表示这个进程的子行为。因此
+\begin_inset Formula $coin\to STOP$
+\end_inset
+
+可以表示为
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\lambda x$
+\end_inset
+
+ • if 
+\begin_inset Formula $x="COINthenSTOP$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+else 
+\begin_inset Formula $"BLEEP$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+函数返回函数，是LISP这种函数式语言的一个非常强大的特性，LISP甚至还允许将一个函数作为参数传递给另一个函数（也就是我们平时所说的闭包）。例如我们可以用来表
+示前缀式定义的进程
+\begin_inset Formula $(c\to P)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $prefix(c,P)=λx$
+\end_inset
+
+• if 
+\begin_inset Formula $x=c$
+\end_inset
+
+ then 
+\begin_inset Formula $P$
+\end_inset
+
+ else 
+\begin_inset Formula $"BLEEP$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+选择式定义的进程怎么表述呢？例如
+\begin_inset Formula $c\text{→}P|d\text{→}Q$
+\end_inset
+
+的话，就需要4个参数了
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $choice2(c,P,d,Q)=λx$
+\end_inset
+
+• if 
+\begin_inset Formula $x=c$
+\end_inset
+
+ then 
+\begin_inset Formula $P$
+\end_inset
+
+ else if 
+\begin_inset Formula $x=d$
+\end_inset
+
+ then 
+\begin_inset Formula $Q$
+\end_inset
+
+ else 
+\begin_inset Formula $"BLEEP$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+至于递归式定义的进程可以使用LISP语言的LABEL特性。例如简单售卖机的进程
+\begin_inset Formula $(\text{μ}X\text{•}coin\text{→}choc\text{→}X)$
+\end_inset
+
+可以表示为：
+\end_layout
+
+\begin_layout Standard
+LABEL 
+\begin_inset Formula $X•prefix("COIN,prefix("CHOC,X))$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+LABEL还能表示相互递归，例如1.1.4习题2的
+\begin_inset Formula $CT$
+\end_inset
+
+可以看成是一个从自然数到进程的映射函数，所以有：
+\end_layout
+
+\begin_layout Standard
+CT = LABEL 
+\begin_inset Formula $X•(λn$
+\end_inset
+
+ • if 
+\begin_inset Formula $n=0$
+\end_inset
+
+ then 
+\begin_inset Formula $choice2("AROUND,X(0),"UP,X(1))$
+\end_inset
+
+ else 
+\begin_inset Formula $choice2("UP,X(n+1),"DOWN,X(n−1)))$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $CT(0)$
+\end_inset
+
+是从地面开始的进程。
+\end_layout
+
+\begin_layout Standard
+如果P是一个表示进程的函数，A是包含这个进程字母表所有符号，则LISP函数
+\begin_inset Formula $menu(A,P)$
+\end_inset
+
+返回
+\begin_inset Formula $A$
+\end_inset
+
+中所有可以作为
+\begin_inset Formula $P$
+\end_inset
+
+生存期内第一个事件的符号集
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $menu(A,P)=$
+\end_inset
+
+if 
+\begin_inset Formula $A=NIL$
+\end_inset
+
+ then 
+\begin_inset Formula $NIL$
+\end_inset
+
+ else if 
+\begin_inset Formula $P(car(A))="BLEEP$
+\end_inset
+
+ then 
+\begin_inset Formula $menu(cdr(A),P)$
+\end_inset
+
+ else 
+\begin_inset Formula $cons(car(A),menu(cdr(A),P))$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+备注：car/cdr/cons/menu都是LISP的基础函数。
+\end_layout
+
+\begin_layout Standard
+所以说，如果
+\begin_inset Formula $x$
+\end_inset
+
+在
+\begin_inset Formula $menu(A,P)$
+\end_inset
+
+里，且
+\begin_inset Formula $y$
+\end_inset
+
+在
+\begin_inset Formula $menu(A,P(x))$
+\end_inset
+
+里，那么
+\begin_inset Formula $P(x)(y)$
+\end_inset
+
+同
+\begin_inset Formula $P(x)$
+\end_inset
+
+一样也是个函数，它定义了进程在执行事件
+\begin_inset Formula $x$
+\end_inset
+
+和
+\begin_inset Formula $y$
+\end_inset
+
+发生后的一系列行为。
+\end_layout
+
+\begin_layout Standard
+举个例子，写个程序，它的过程可以描述为：首先在屏幕上打印
+\begin_inset Formula $menu(A,P)$
+\end_inset
+
+，然后从键盘上接收一个符号，如果符号不在
+\begin_inset Formula $menu$
+\end_inset
+
+里，滴一声忽略它，否则的话就执行
+\begin_inset Formula $P$
+\end_inset
+
+进程，
+\begin_inset Formula $P$
+\end_inset
+
+进程亦如此。最后程序以接收到
+\begin_inset Formula $"END$
+\end_inset
+
+符号结束。假设k是键盘输入的符号序列，则程序的输出序列为：
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $interact(A,P,k)=cons(menu(A,P)$
+\end_inset
+
+, if 
+\begin_inset Formula $car(k)="END$
+\end_inset
+
+ then 
+\begin_inset Formula $NIL$
+\end_inset
+
+ else if 
+\begin_inset Formula $P(car(k))="BLEEP$
+\end_inset
+
+ then 
+\begin_inset Formula $cons("BLEEP,interact(A,P,cdr(k)))$
+\end_inset
+
+ else 
+\begin_inset Formula $interact(A,P(car(k),cdr(k)))$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+^_^ 其实就是一串的滴滴声（有的话）
+\end_layout
+
+\begin_layout Standard
+这几个函数使用的都是伪代码，只是为了更清晰的表达进程的行为。真正的LISP实现还必须将它们转化传统的S-expression形式才行，例如在LISPKit里，前
+缀函数可以定义为：
+\end_layout
+
+\begin_layout Standard
+prefix lanbda (a p) (lambda (x) (if (eq x a) p (quote BLEEP)))
+\end_layout
+
+\begin_layout Standard
+不过不用担心，我们这里只会用到纯函数式语言LISP很小的一个子集，所以我们可以很容易地将这些代码转换到别的机器上去运行，但是要记住，必须是那些具有静态绑定的LI
+SP语言(LISP的方言很多，比如最常见的就是emacs lisp，但它是动态绑定的)。如果支持惰性求值就更方便了，因为它能够直接对递归方程进行编码，不需要使用
+LABEL，所以
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $VMS=prefix("COIN,prefix("CHOC,VMS))$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+如果输入和输出都是使用惰性求值来实现的话，
+\begin_inset Formula $interact$
+\end_inset
+
+函数可以将键盘作为它的第三个参数，进程
+\begin_inset Formula $P$
+\end_inset
+
+的
+\begin_inset Formula $menu$
+\end_inset
+
+作为它的第一个输出，通过不断的输入菜单中的字符，用户就能够了解整个进程
+\begin_inset Formula $P$
+\end_inset
+
+的行为了。（跟惰性求值有何关系？求科普）
+\end_layout
+
+\begin_layout Standard
+至于其他的LISP方言，必须重写
+\begin_inset Formula $interact$
+\end_inset
+
+函数，使用显式的输入输出来实现。这样一来，我们就能够看到计算机执行以LISP函数表示的所有进程了。从这个意义上看，一个LISP函数可以看作是对应进程的实现，更进
+一步说，像prefix这样的LISP函数可以被看成是进程算子的实现了。
+\end_layout
+
+\begin_layout Subsection
+迹
+\end_layout
+
+\begin_layout Standard
+迹即是符号序列，记录了进程从启动到某个时刻所执行的事件，符号之间用逗号隔开，例如
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\langle x,y\rangle$
+\end_inset
+
+由两个事件组成，
+\begin_inset Formula $y$
+\end_inset
+
+在
+\begin_inset Formula $x$
+\end_inset
+
+后发生
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\langle x\rangle$
+\end_inset
+
+一个只包含事件x的迹
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\langle\rangle$
+\end_inset
+
+没有任何事件的迹
+\end_layout
+
+\begin_layout Description
+举例
+\end_layout
+
+\begin_layout Enumerate
+当一个简单的售卖机服务完它的最初两个顾客时，它的迹为
+\begin_inset Formula $\langle coin,choc,coin,choc\rangle$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+同样是这台机器，在第二个顾客得到他的巧克力之前，进程的迹为 
+\begin_inset Formula $\langle coin,choc,coin\rangle$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+无论是进程还是监视者都无法知道交易完成后的结果会是什么，顾客饿不饿以及这个巧克力是否符合他的口味，等等这些都不在进程的字母表里，自然也就没法被记录了。
+\end_layout
+
+\begin_layout Enumerate
+进程还没执行任何事件之前，迹为空，也就是
+\begin_inset Formula $\langle\rangle$
+\end_inset
+
+，空的迹是任何一个进程最短的迹
+\end_layout
+
+\begin_layout Enumerate
+复杂的自动售卖机
+\begin_inset Formula $VMC$
+\end_inset
+
+有7个长度不超过2的迹
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Graphics
+	filename Z:/CSP-1.5.1.png
+	scale 40
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+其中最下面的四个迹中只会有一个发生
+\end_layout
+
+\begin_layout Enumerate
+如果顾客不理睬那个注意事项，他投入了三枚1便士硬币，进程的迹为 
+\begin_inset Formula $\langle in1p,in1p,in1p\rangle$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+实际上机器此时已经损坏了，但从这个迹我们还看不出来，我们可以通过下面这个事实来证明一个机器已经损坏了：即在这台机器所有可能的迹中，没有任何一个迹是这个迹的延伸。
+也就是不存在任意的事件
+\begin_inset Formula $x$
+\end_inset
+
+，使得
+\begin_inset Formula $\langle in1p,in1p,in1p,x\rangle$
+\end_inset
+
+是
+\begin_inset Formula $VMC$
+\end_inset
+
+的一个迹。
+\end_layout
+
+\begin_layout Subsection
+迹的运算
+\end_layout
+
+\begin_layout Standard
+迹的运算对记录，描述和理解进程的行为是非常关键的。这一章我们主要介绍迹的一般性质和运算。下面是几个基本约定
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $s,t,u$
+\end_inset
+
+表示迹
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $S,T,U$
+\end_inset
+
+表示迹集，即迹的集合
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $f,g,h$
+\end_inset
+
+表示函数
+\end_layout
+
+\begin_layout Subsubsection
+连接
+\end_layout
+
+\begin_layout Standard
+迹的连接是最重要的操作，使用
+\begin_inset Formula $\mathcircumflex$
+\end_inset
+
+符号来连接两个迹
+\end_layout
+
+\begin_layout Description
+举例
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\langle coin,choc\rangle\mathcircumflex\langle coin,toffee\rangle=\langle coin,choc,coin,toffee\rangle$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\langle in1p\rangle\mathcircumflex\langle in1p\rangle=\langle in1p,in1p\rangle$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\langle in1p,in1p\rangle\mathcircumflex\langle\rangle=\langle in1p,in1p\rangle$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+连接运算符合结合律
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+L1: 
+\begin_inset Formula $s\mathcircumflex\langle\rangle=\langle\rangle\mathcircumflex s=s$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+L2: 
+\begin_inset Formula $s\mathcircumflex[t\mathcircumflex u]=[s\mathcircumflex t]\mathcircumflex u$
+\end_inset
+
+ 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+L3: 
+\begin_inset Formula $s\mathcircumflex t=s\mathcircumflex u\equiv t=u$
+\end_inset
+
+ 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+L4: 
+\begin_inset Formula $s\mathcircumflex t=u\mathcircumflex t\equiv s=u$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+L5: 
+\begin_inset Formula $s\mathcircumflex t=\langle\rangle\equiv s=\langle\rangle\wedge t=\langle\rangle$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+假设
+\begin_inset Formula $f$
+\end_inset
+
+是迹到迹的映射函数，那么对空迹进行映射的结果必然也是空迹
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $f(\langle\rangle)=\langle\rangle$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+如果函数满足分配律，那么称这个函数是严格的
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $f(s\mathcircumflex t)=f(s)\mathcircumflex f(t)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+如果
+\begin_inset Formula $n$
+\end_inset
+
+是一个自然数，我们称
+\begin_inset Formula $t^{n}$
+\end_inset
+
+为
+\begin_inset Formula $t$
+\end_inset
+
+的
+\begin_inset Formula $n$
+\end_inset
+
+次重复连接，也就是：
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+L6:
+\begin_inset Formula $t^{0}=\langle\rangle$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+L7:
+\begin_inset Formula $t^{n+1}=t^{n}\mathcircumflex t$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+这是两条非常有用的基本定律，下面是两条推论：
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+L8: 
+\begin_inset Formula $t^{n+1}=t\mathcircumflex t^{n}$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+L9: 
+\begin_inset Formula $(s\mathcircumflex t)^{n+1}=s\mathcircumflex(t\mathcircumflex s)^{n}\mathcircumflex t$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+限制
+\end_layout
+
+\begin_layout Standard
+表达式
+\begin_inset Formula $t\upharpoonright A$
+\end_inset
+
+表示迹
+\begin_inset Formula $t$
+\end_inset
+
+中所有的符号必须在
+\begin_inset Formula $A$
+\end_inset
+
+中，
+\begin_inset Formula $t\upharpoonright A$
+\end_inset
+
+的运算结果就是将
+\begin_inset Formula $t$
+\end_inset
+
+中所有不在
+\begin_inset Formula $A$
+\end_inset
+
+中的符号全部去掉。例如
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\langle around,up,down,around\rangle\upharpoonright{up,down}=\langle up,down\rangle$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+限制算子满足分配律
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+L1: 
+\begin_inset Formula $\langle\rangle\upharpoonright A=\langle\rangle$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+L2: 
+\begin_inset Formula $(s\mathcircumflex t\upharpoonright A=(s\upharpoonright A)\mathcircumflex(t\upharpoonright A))$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+对于单迹，显然有
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+L3: 
+\begin_inset Formula $\langle x\rangle\upharpoonright A=\langle x\rangle$
+\end_inset
+
+ if 
+\begin_inset Formula $x\in A$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+L4: 
+\begin_inset Formula $\langle x\rangle\upharpoonright A=\langle\rangle$
+\end_inset
+
+ if 
+\begin_inset Formula $y\notin A$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+首尾
+\end_layout
+
+\begin_layout Standard
+如果
+\begin_inset Formula $s$
+\end_inset
+
+为非空序列，则序列中的第一个为
+\begin_inset Formula $s_{0}$
+\end_inset
+
+，其余的可表示为
+\begin_inset Formula $s'$
+\end_inset
+
+，例如
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\langle x,y,z\rangle_{0}=x$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\noun off
+\color none
+\lang english
+\begin_inset Formula $\langle x,y,z\rangle'=\langle y,x\rangle$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+所有这些运算都不能作用在空的序列上
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+L1: 
+\begin_inset Formula $(\langle x\rangle\mathcircumflex s)_{0}=x$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+L2: 
+\begin_inset Formula $(\langle x\rangle\mathcircumflex s)'=s$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+L3: 
+\begin_inset Formula $s=(\langle s_{0}\rangle\mathcircumflex s')$
+\end_inset
+
+，
+\begin_inset Formula $s\neq\langle\rangle$
+\end_inset
+
+ 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+L4: 
+\begin_inset Formula $s=t\equiv(s=t=\langle\rangle\lor(s_{0}=t_{0}\land s'=t'))$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+定律4可以很容易证明两个迹是否相等。
+\end_layout
+
+\begin_layout Subsubsection
+星号
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $A^{*}$
+\end_inset
+
+是一个有限迹的集合，包括
+\begin_inset Formula $\langle\rangle$
+\end_inset
+
+，这些迹中的所有符号均来自于字母表
+\begin_inset Formula $A$
+\end_inset
+
+中的符号，很明显，有：
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $A^{∗}=\{s|s\lceil A=s\}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+推论： 
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+L1: 
+\begin_inset Formula $\langle\rangle\in A^{*}$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+L2: 
+\begin_inset Formula $\langle x\rangle\in A^{*}\equiv x\in A$
+\end_inset
+
+ 
+\begin_inset Newline newline
+\end_inset
+
+L3: 
+\begin_inset Formula $(s\mathcircumflex t)\in A^{*}\equiv s\in A^{*}\land t\in A^{*}$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+这几条定律可以用来判断一个迹是否在
+\begin_inset Formula $A^{*}$
+\end_inset
+
+中，例如，如果
+\begin_inset Formula $x\in A$
+\end_inset
+
+且
+\begin_inset Formula $y\notin A$
+\end_inset
+
+，则有
+\end_layout
+
+\begin_layout Standard
+
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\noun off
+\color none
+\lang english
+\begin_inset Formula $\langle x,y\rangle\in A^{*}\equiv\langle x\rangle-\langle y\rangle\in A^{*}\equiv(\langle x\rangle\in A^{*})\land(\langle y\rangle\in A^{*})\equiv true\land false\equiv false$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+还有一条定律，可以作为
+\begin_inset Formula $A^{*}$
+\end_inset
+
+的递归定义
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+L4: 
+\begin_inset Formula $A^{*}=\{t|t=\langle\rangle\lor(t_{0}\in A\land t'\in A^{*})\}$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+次序
+\end_layout
+
+\begin_layout Standard
+如果
+\begin_inset Formula $s$
+\end_inset
+
+是
+\begin_inset Formula $t$
+\end_inset
+
+的一个初始序列，那么我们总能找到一个后续序列
+\begin_inset Formula $u$
+\end_inset
+
+，使得
+\begin_inset Formula $s\mathcircumflex u=t$
+\end_inset
+
+，因此，我们将次序关系定义为：
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $s\le t=(\exists u\bullet s\mathcircumflex u=t)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+我们称
+\begin_inset Formula $s$
+\end_inset
+
+为
+\begin_inset Formula $t$
+\end_inset
+
+的前缀。例如：
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\langle x,y\rangle\le\langle x,y,x,w\rangle$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\langle x,y\rangle\le\langle z,y,x\rangle\equiv x=z$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\le$
+\end_inset
+
+是一个偏序关系，最小元是
+\begin_inset Formula $\langle\rangle$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+L1: 
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\noun off
+\color none
+\lang english
+
+\begin_inset Formula $\langle\rangle\le s$
+\end_inset
+
+
+\family default
+\series default
+\shape default
+\size default
+\emph default
+\bar default
+\noun default
+\color inherit
+\lang chinese-simplified
+
+\begin_inset Newline newline
+\end_inset
+
+L2: 
+\begin_inset Formula $s\le s$
+\end_inset
+
+ 自反的 
+\begin_inset Newline newline
+\end_inset
+
+L3: 
+\begin_inset Formula $s\le t\land t\le s\Rightarrow s=t$
+\end_inset
+
+反对称的
+\begin_inset Newline newline
+\end_inset
+
+L4: 
+\begin_inset Formula $s\le t\land t\le u\Rightarrow s\le u$
+\end_inset
+
+ 传递的
+\begin_inset Newline newline
+\end_inset
+
+L5: 
+\begin_inset Formula $(\langle x\rangle\mathcircumflex s)\le t\equiv t\neq\langle\rangle\land x=t_{0}\land s\le t'$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+其中L1和L5可以用来证明
+\begin_inset Formula $s\le t$
+\end_inset
+
+是否成立。
+\end_layout
+
+\begin_layout Standard
+L6: 
+\begin_inset Formula $s\le u\land t\le u\Rightarrow s\le t\lor t\le s$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+定理6说明了任意一个子序列的前缀都是全序的。
+\end_layout
+
+\begin_layout Standard
+假设
+\begin_inset Formula $s$
+\end_inset
+
+是
+\begin_inset Formula $t$
+\end_inset
+
+的一个子序列（不一定是要初始序列），则我们说
+\begin_inset Formula $s$
+\end_inset
+
+在
+\begin_inset Formula $t$
+\end_inset
+
+里面，形式化的定义：
+\end_layout
+
+\begin_layout Standard
+L7: 
+\begin_inset Formula $s\text{\textrm{ in }}t=(\exists u,v\bullet t=u\mathcircumflex s\mathcircumflex v)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+这个关系也是偏序的，它满足上述的L1~L4定律，同时还满足：
+\end_layout
+
+\begin_layout Standard
+L8: 
+\begin_inset Formula $(\langle x\rangle\mathcircumflex s)\textrm{ in }t\equiv t\neq\langle\rangle\land((t_{0}=x\land s\le t')\lor(\langle x\rangle-s\textrm{ in }t'))$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+函数
+\begin_inset Formula $f$
+\end_inset
+
+是迹到迹的映射，对于任意的
+\begin_inset Formula $s\le t$
+\end_inset
+
+有
+\begin_inset Formula $f(s)\le f(t)$
+\end_inset
+
+，则我们称函数
+\begin_inset Formula $f$
+\end_inset
+
+是单调的。所有符合分配律的函数都是单调的。例如：
+\end_layout
+
+\begin_layout Standard
+L9: 
+\begin_inset Formula $s\le t\Rightarrow(s\upharpoonright A)\le(t\upharpoonright A)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+而二元函数的单调性我们可以通过偏导的思想来解决，也就是将其中某个参数看作常量，分析函数的单调性。例如，连接运算，如果将第一个参数当作常量，那么这个它就是单调的，
+如果将第二个参数当常量，就不是。
+\end_layout
+
+\begin_layout Standard
+L10: 
+\begin_inset Formula $t\le u\Rightarrow(s\mathcircumflex t)\le(s\mathcircumflex u)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+一个函数，只有在它所有的参数上都是单调的，才能说这个函数是单调的。
+\end_layout
+
+\begin_layout Subsubsection
+长度
+\end_layout
+
+\begin_layout Standard
+长度使用 
+\begin_inset Formula $\#$
+\end_inset
+
+ 来表示，例如
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\#\langle x,y,z\rangle=3$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\#$
+\end_inset
+
+相关的定理如下：
+\end_layout
+
+\begin_layout Standard
+L1: 
+\begin_inset Formula $\#\langle\rangle=0$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+L2: 
+\begin_inset Formula $\#\langle x\rangle=1$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+L3: 
+\begin_inset Formula $\#\langle s\mathcircumflex t\rangle=\#\langle s\rangle+\#\langle t\rangle$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+A中符号在t中出现的次数是，
+\begin_inset Formula $\#(t\upharpoonright A)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+L4: 
+\begin_inset Formula $\#(t\upharpoonright(A\cup B))=\#(t\upharpoonright A)+\#(t\upharpoonright B)-\#(t\upharpoonright(A\cap B))$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+L5: 
+\begin_inset Formula $s\le t\Rightarrow\#s\le\#t$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+L6: 
+\begin_inset Formula $\#(t^{n})=n\times(\#t)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+迹s中x符号出现的个数是（啥意思）：
+\end_layout
+
+\begin_layout Standard
+L7: 
+\begin_inset Formula $s\downarrow x=\#(s\upharpoonright{x})$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+迹的实现
+\end_layout
+
+\begin_layout Standard
+要在计算机上实现迹需要一门列处理语言，LISP似乎天生就很适合干这种事情。迹的表示是通过事件原子的序列来表示的，事件原子用字母表中的符号表示。例如
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\langle\rangle=NIL$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\langle coin=(cons("COIN,NIL))\rangle$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\langle coin,choc\rangle="(COINCHOC)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+迹的操作可以实现为对链表上的函数。例如，求链表的首尾可以使用函数car和cdr
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $t_{0}=car(t)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $t'=cdr(t)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\langle x\rangle\mathcircumflex s=cons(x,s)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+一般链接可实现为append函数，使用递归定义
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $s\mathcircumflex t=append(s,t)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+\begin_inset Formula $append(s,t)=$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+if 
+\begin_inset Formula $s=NIL$
+\end_inset
+
+ then
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\begin_inset Formula $t$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+else
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\begin_inset Formula $cons(car(s),append(cdr(s),t))$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+正确性证明，基于一下定律：
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\langle\rangle\mathcircumflex t=t$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $s\mathcircumflex t=\langle s_{0}\rangle\mathcircumflex(s'\mathcircumflex t)$
+\end_inset
+
+当前仅当
+\begin_inset Formula $s\neq\langle\rangle$
+\end_inset
+
+时
+\end_layout
+
+\begin_layout Standard
+其中每次递归
+\begin_inset Formula $s$
+\end_inset
+
+的长度都会减小，这也就确保了递归能够正确结束，其他的算子也是这么干的。
+\end_layout
+
+\begin_layout Standard
+限制的实现，我们用一个列表来表示一个有限集合
+\begin_inset Formula $B$
+\end_inset
+
+，如何判断
+\begin_inset Formula $x$
+\end_inset
+
+在
+\begin_inset Formula $B$
+\end_inset
+
+中
+\begin_inset Formula $(x\in B)$
+\end_inset
+
+呢？
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+ismember(x,B)=
+\end_layout
+
+\begin_layout Plain Layout
+
+if B = NIL then
+\end_layout
+
+\begin_layout Plain Layout
+
+	false
+\end_layout
+
+\begin_layout Plain Layout
+
+else if x=car(B) then 
+\end_layout
+
+\begin_layout Plain Layout
+
+	true
+\end_layout
+
+\begin_layout Plain Layout
+
+else
+\end_layout
+
+\begin_layout Plain Layout
+
+	ismember(x,cdr(B))
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+则限制运算
+\begin_inset Formula $(s\upharpoonright B)$
+\end_inset
+
+可以实现为：
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+restrict(s,B)=
+\end_layout
+
+\begin_layout Plain Layout
+
+if s = NIL then
+\end_layout
+
+\begin_layout Plain Layout
+
+	NIL
+\end_layout
+
+\begin_layout Plain Layout
+
+else if ismember(car(s),B) then
+\end_layout
+
+\begin_layout Plain Layout
+
+	cons(car(s),restrict(cdr(s),B)) 
+\end_layout
+
+\begin_layout Plain Layout
+
+else
+\end_layout
+
+\begin_layout Plain Layout
+
+	restrict(cdr(s),B)
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+判断偏序关系是否成立，使用1.6.5的L1和L5
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+isprefix(s,t)=
+\end_layout
+
+\begin_layout Plain Layout
+
+if s = NIL then
+\end_layout
+
+\begin_layout Plain Layout
+
+	true
+\end_layout
+
+\begin_layout Plain Layout
+
+else if t = NIL then
+\end_layout
+
+\begin_layout Plain Layout
+
+	false
+\end_layout
+
+\begin_layout Plain Layout
+
+else
+\end_layout
+
+\begin_layout Plain Layout
+
+	car(s)=car(t) and isprefix(cdr(s),cdr(t))
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+进程的迹
+\end_layout
+
+\begin_layout Standard
+进程的迹就是进程行为的记录。但是在进程启动前，我们并不知道进程会沿着哪个迹进行。现在我们使用
+\backslash
+(traces(P)
+\backslash
+)来表示进程的迹集
+\end_layout
+
+\begin_layout Description
+练习
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Formula $STOP$
+\end_inset
+
+进程唯一的迹就是
+\begin_inset Formula $\langle\rangle$
+\end_inset
+
+，
+\begin_inset Formula $traces(STOP)=\{\langle\rangle\}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+一台接收了一枚硬币就坏了的机器，只能有两个迹，
+\begin_inset Formula $traces(coin\to STOP)=\{\langle\rangle,\langle coin\rangle\}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+一个只会滴答走的闹钟
+\begin_inset Formula $traces(\mu X\bullet tick\to X)=\{\langle\rangle,\langle tick\rangle,\langle tick,tick\rangle,...\}=\{tick\}^{*}$
+\end_inset
+
+，这里进程的迹集是无限的，但是其中每个迹都是有限的。
+\end_layout
+
+\begin_layout Enumerate
+简单自动售卖机 
+\begin_inset Formula $traces(\mu X\bullet coin\to choc\to X)=\{s|\exists n\bullet s\le\langle coin,choc\rangle^{n}\}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+定律
+\end_layout
+
+\begin_layout Standard
+这一接我们介绍如何计算迹集
+\end_layout
+
+\begin_layout Standard
+L1: 
+\begin_inset Formula $traces(STOP)=\{t|t=\langle\rangle\}=\{\langle\rangle\}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+这是计算选择的
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $(c\to P)$
+\end_inset
+
+的迹可能为空，因为任意一个进程的迹集都包含空迹，其余的非空迹必须是以
+\begin_inset Formula $c$
+\end_inset
+
+开始
+\end_layout
+
+\begin_layout Standard
+L2: 
+\begin_inset Formula $traces(c\to P)=\{t|t=\langle\rangle\lor(t_{0}=c\land t'\in traces(P))\}=\{\langle\rangle\}\cup\{\langle c\rangle\mathcircumflex t|t\in traces(P)\}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+L3: 
+\begin_inset Formula $traces(c\to P|d\to Q)=\{t|t=\langle\rangle\lor(t_{0}=c\land t'\in traces(P))\lor(t_{0}=d\land t'\in traces(Q))\}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+L4: 
+\begin_inset Formula $traces(x:B\to P(x))=\{t|t=\langle\rangle\lor(t_{0}\in B\land t'\in traces(P(t_{0})))\}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+这是计算选择的，但是递归相对难很多。进程递归定义也就是这个等式的解：
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $X=F(X)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+首先我们定义函数F的迭代为：
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $F^{0}(X)=X$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $F^{n+1}(X)=F(F^{n}(X))=F^{n}(F(X))=\underbrace{F(\dots(F(F(X)))\dots)}_{n+1times}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+然后，为了保证F必须是卫式的，我们定义
+\end_layout
+
+\begin_layout Standard
+L5: 
+\begin_inset Formula $traces(\mu X:A\bullet F(X))=\bigcup_{n\ge0}traces(F^{n}(STOP_{A}))$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Description
+练习
+\end_layout
+
+\begin_layout Enumerate
+1.1.3练习8中的
+\begin_inset Formula $RUN_{A}$
+\end_inset
+
+被定义为：
+\begin_inset Formula $\mu X:A\bullet F(X)$
+\end_inset
+
+，其中
+\begin_inset Formula $F(X)=(x:A\to X)$
+\end_inset
+
+，证明
+\begin_inset Formula $traces(RUN_{A})=A^{*}$
+\end_inset
+
+。
+\begin_inset Newline newline
+\end_inset
+
+关键是使用数学归纳法证明：假设
+\begin_inset Formula $A^{*}=\bigcup_{n\ge0}\{s|s\in A^{*}\land\#s\le n\}$
+\end_inset
+
+ 成立
+\begin_inset Newline newline
+\end_inset
+
+当
+\begin_inset Formula $n=0$
+\end_inset
+
+时，显然是成立的 :
+\begin_inset Formula $traces(STOP_{A})={\langle\rangle}=\{s|s\in A^{*}\land\#s\le0\}$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+现在要看
+\begin_inset Formula $n+1$
+\end_inset
+
+时是否成立: 
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $traces(F^{n+1}(STOP_{A}))=traces(x:A\to F^{n}(STOP_{A}))$
+\end_inset
+
+ 
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $=\{t|t=\langle\rangle\lor(t_{0}\in A\land t'\in traces(F^{n}(STOP_{A})))\}$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $=\{t|t=\langle\rangle\lor(t_{0}\in A\land(t'\in A^{*}\land\#t'\le n))\}$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $=\{t|(t=\langle\rangle\lor(t_{0}\in A\land t'\in A^{*}))\land\#t\le n+1\}$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $=\{t|t\in A^{*}\land\#t\le n+1\}$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+显然，这也是成立的，证毕。
+\end_layout
+
+\begin_layout Enumerate
+证明1.5的练习4，也就是证明：
+\begin_inset Formula $traces(VMS)=\bigcup_{n\ge0}\{s|s\le\langle coin,choc\rangle^{n}\}$
+\end_inset
+
+，其中
+\begin_inset Formula $F(X)=coin\to choc\to X$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+证明：同理，使用数学归纳法来证明，现假设
+\begin_inset Formula $traces(F^{n}(VMS))=\{t|t\le\langle coin,choc\rangle^{n}\}$
+\end_inset
+
+成立
+\begin_inset Newline newline
+\end_inset
+
+当
+\begin_inset Formula $n=0$
+\end_inset
+
+时，
+\begin_inset Formula $traces(STOP)=\{t|t\le\langle coin,choc\rangle^{0}\}$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+当
+\begin_inset Formula $n+1$
+\end_inset
+
+时，
+\begin_inset Formula $traces(coin\to choc\to F^{n}(STOP))$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $=\{\langle\rangle,\langle coin\rangle\}\cup\{\langle coin,choc\rangle\mathcircumflex t|t\in traces(F^{n}(STOP))\}$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $=\{\langle\rangle,\langle coin\rangle\}\cup\{\langle coin,choc\rangle\mathcircumflex t|t\le\langle coin,choc\rangle^{n}\}$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $=\{s|s=\langle\rangle\lor s=\langle coin\rangle\lor\exists t\bullet s=\langle coin,choc\rangle\mathcircumflex t\land t\le\langle coin,choc\rangle^{n}\}$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $=\{s|s\le\langle coin,choc\rangle^{n+1}\}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+还有几条定理：
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+L6: 
+\begin_inset Formula $\langle\rangle\in traces(P)$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+L7: 
+\begin_inset Formula $s-t\in traces{P}\Rightarrow s\in traces(P)$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+L8: 
+\begin_inset Formula $traces(P)\subseteq(\alpha P)^{*}$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+使用树状图来表示进程的行为，如下，其中从根节点到黑色节点的迹为
+\begin_inset Formula $\langle in2p,small,out1p\rangle$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename Z:/CSP-1.8.1.png
+	scale 40
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+显然，从跟节点到任意一节点，唯一地标志了进程的一个迹。空迹表示为跟节点到跟节点。
+\end_layout
+
+\begin_layout Subsubsection
+实现
+\end_layout
+
+\begin_layout Standard
+假设
+\begin_inset Formula $P$
+\end_inset
+
+是一个使用LISP语言实现的进程（也就是一个函数），
+\begin_inset Formula $S$
+\end_inset
+
+是一个迹，如何判断
+\begin_inset Formula $S$
+\end_inset
+
+是否是进程
+\begin_inset Formula $P$
+\end_inset
+
+的一个迹？
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $istrace(s,P)=$
+\end_inset
+
+if 
+\begin_inset Formula $s=NIL$
+\end_inset
+
+ then 
+\begin_inset Formula $true$
+\end_inset
+
+ else if 
+\begin_inset Formula $P(car(s))="BLEEP$
+\end_inset
+
+ then 
+\begin_inset Formula $false$
+\end_inset
+
+ else 
+\begin_inset Formula $istrace(cdr(s),P(car(s)))$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Since s is finite, the recursion involved here will terminate, having explored
+ only a finite initial segment of the behaviour of the process P .
+ It is because we avoid infinite exploration that we can safely define a
+ process as an infinite object, i.e., a function whose result is a function
+ whose result is a function whose result...
+\end_layout
+
+\begin_layout Subsubsection
+后继
+\end_layout
+
+\begin_layout Standard
+如果
+\begin_inset Formula $s\in traces(P)$
+\end_inset
+
+，则
+\begin_inset Formula $P/s$
+\end_inset
+
+表示进程
+\begin_inset Formula $P$
+\end_inset
+
+执行
+\begin_inset Formula $S$
+\end_inset
+
+后的进程，如果
+\begin_inset Formula $S$
+\end_inset
+
+并不是
+\begin_inset Formula $P$
+\end_inset
+
+的迹，则
+\begin_inset Formula $P/s$
+\end_inset
+
+没有意义
+\end_layout
+
+\begin_layout Description
+练习
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Formula $(VMS/\langle coin\rangle)=(choc\to VMS)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Formula $(VMS/\langle coin,choc\rangle)=VMS$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Formula $(VMC/\langle in1p\rangle^{3})=STOP$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+为了避免损失，售卖机的老板自己吃掉了第一块巧克力，VMCRED（1.1.3）
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $(VMCRED/\langle choc\rangle)=VMS2$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+（我靠！这能避免多少损失啊，9牛一毛）
+\end_layout
+
+\begin_layout Enumerate
+在进程的树状图上，
+\begin_inset Formula $P/s$
+\end_inset
+
+表示一棵完整的子树。例如上图1.1中以黑色节点为根的子树就可以表示为
+\begin_inset Formula $VMC/\langle in2p,small,out1p\rangle$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+L1: 
+\begin_inset Formula $P/\langle\rangle=P$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+L2: 
+\begin_inset Formula $P/\langle s-t\rangle=(P/s)/t$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+L3: 
+\begin_inset Formula $(x:B\to P(x))/\langle c\rangle=P(c)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+对于定理3，如果c不是B中的符号，则没有意义。L3还有个推论
+\end_layout
+
+\begin_layout Standard
+L3A: 
+\begin_inset Formula $(c\to P)/\langle c\rangle=P$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+同样，
+\begin_inset Formula $(P/s)$
+\end_inset
+
+的迹可以定义为：
+\end_layout
+
+\begin_layout Standard
+L4:
+\begin_inset Formula $traces(P/s)=\{t|t\mathcircumflex t\in traces(P)\}$
+\end_inset
+
+，其中
+\begin_inset Formula $s$
+\end_inset
+
+必须是
+\begin_inset Formula $P$
+\end_inset
+
+的一个迹
+\end_layout
+
+\begin_layout Standard
+要证明一个永远都不会停止的进程
+\begin_inset Formula $P$
+\end_inset
+
+，只需要证明
+\begin_inset Formula $\forall s:traces(P)\bullet P/s\neq STOP$
+\end_inset
+
+即可
+\end_layout
+
+\begin_layout Standard
+循环进程，就是能在某一时刻回到它的初始状态的，也就是
+\begin_inset Formula $\forall s:traces(P)\bullet\exists t\bullet(P/(s\mathcircumflex t)=P)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+显然，循环的进程不会停止。（STOP进程是不是cyclic的？）
+\end_layout
+
+\begin_layout Description
+例子
+\end_layout
+
+\begin_layout Enumerate
+下面这些进程都是循环的（1.1.3的例8，1.1.2的例2，1.1.3的例3，1.1.4的例2）
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $RUN_{A}$
+\end_inset
+
+, 
+\begin_inset Formula $VMS$
+\end_inset
+
+, 
+\begin_inset Formula $(choc\to VMS)$
+\end_inset
+
+, 
+\begin_inset Formula $VMCT$
+\end_inset
+
+, 
+\begin_inset Formula $CT_{7}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+下面这几个就不是循环的，因为它们不可能再回到初始状态，如（1.1.2的例2，1.1.3的例3，1.1.4的例2）
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $(coin\to VMS)$
+\end_inset
+
+, 
+\begin_inset Formula $(choc\to VMCT)$
+\end_inset
+
+, 
+\begin_inset Formula $(around\to CT_{7})$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+比如
+\begin_inset Formula $choc\to VMCT$
+\end_inset
+
+，首先得到一块巧克力，而后总是有toffee和choc可以选择，和初始状态并不相同。
+\end_layout
+
+\begin_layout Standard
+注意：
+\begin_inset Formula $/$
+\end_inset
+
+不能用来定义递归进程，否则会丢掉卫式性质。比如
+\begin_inset Formula $X=(a\to(X/\langle a\rangle))$
+\end_inset
+
+就不是卫式的，因为：
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $(a\to((a\to P)/\langle a\rangle))=(a\to P)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+显然，任意一个
+\begin_inset Formula $(a\to P)$
+\end_inset
+
+都是它的解。因此，递归进程的定义里我们不使用
+\begin_inset Formula $/$
+\end_inset
+
+算子
+\end_layout
+
+\begin_layout Subsection
+迹的其他运算
+\end_layout
+
+\begin_layout Standard
+介绍迹的其他运算
+\end_layout
+
+\begin_layout Subsubsection
+变更
+\end_layout
+
+\begin_layout Standard
+如果函数
+\begin_inset Formula $f$
+\end_inset
+
+是从字母表
+\begin_inset Formula $A$
+\end_inset
+
+到字母表
+\begin_inset Formula $B$
+\end_inset
+
+的映射，那我们可以推断出另一个函数
+\begin_inset Formula $f^{*}$
+\end_inset
+
+，它是字母表
+\begin_inset Formula $A^{*}$
+\end_inset
+
+到字母表
+\begin_inset Formula $B^{*}$
+\end_inset
+
+的映射。（好好想想，千万别理解错了）。
+\end_layout
+
+\begin_layout Standard
+例如，double*是这样的一个函数 
+\begin_inset Formula $double*(\langle1,5,3,1\rangle)=\langle2,10,6,2\rangle$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+星号函数显然是符合分配律的，而且可严格推到
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+L1: 
+\begin_inset Formula $f^{*}(\langle\rangle)=\langle\rangle$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+L2: 
+\begin_inset Formula $f^{*}(\langle x\rangle)=\langle f(x)\rangle$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+L3: 
+\begin_inset Formula $f^{*}(\langle s\mathcircumflex t\rangle)=f^{*}(s)\mathcircumflex f^{*}(t)$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+其他一些很明显的规则
+\end_layout
+
+\begin_layout Standard
+L4: 
+\begin_inset Formula $f^{*}(s)_{0}=f(s_{0})$
+\end_inset
+
+ 如果 
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\noun off
+\color none
+\lang english
+
+\begin_inset Formula $s\neq\langle\rangle$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+L5: 
+\begin_inset Formula $\#f^{*}(s)=\#s$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+但有一个很容易弄错的，就是
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $f^{*}(s\upharpoonright A)=f^{*}(s)\upharpoonright f(A)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+其中 
+\begin_inset Formula $f(A)={f(x)|x\in A}$
+\end_inset
+
+，考虑下单射和多射的情况。
+\end_layout
+
+\begin_layout Subsubsection
+连接
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $s$
+\end_inset
+
+是一个迹，其中每个元素也是一个迹，则符号
+\begin_inset Formula $\mathcircumflex/$
+\end_inset
+
+将其中所有迹进行连接。例如
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\mathcircumflex/\langle\langle1,3\rangle,\langle\rangle,\langle7\rangle\rangle=\langle1,3\rangle-\langle\rangle-\langle7\rangle=\langle1,3,7\rangle$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+这个操作符合分配律
+\end_layout
+
+\begin_layout Standard
+L1:
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\noun off
+\color none
+\lang english
+
+\begin_inset Formula $\mathcircumflex/\langle\rangle=\langle\rangle$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+L2: 
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\noun off
+\color none
+\lang english
+
+\begin_inset Formula $\mathcircumflex/\langle s\rangle=\langle s\rangle$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+L3: 
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\noun off
+\color none
+\lang english
+
+\begin_inset Formula $\mathcircumflex/\langle s\mathcircumflex t\rangle=(\mathcircumflex/s)\mathcircumflex(\mathcircumflex/t)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+交织
+\end_layout
+
+\begin_layout Standard
+如果
+\begin_inset Formula $s$
+\end_inset
+
+是
+\begin_inset Formula $t$
+\end_inset
+
+和
+\begin_inset Formula $u$
+\end_inset
+
+的交织，则
+\begin_inset Formula $s$
+\end_inset
+
+中的每一个子串都可以由
+\begin_inset Formula $t$
+\end_inset
+
+和
+\begin_inset Formula $u$
+\end_inset
+
+的子串组成（很奇怪，为什么不直接使用交集来定义呢？）。例如
+\begin_inset Formula $s=\langle1,6,3,1,5\rangle$
+\end_inset
+
+是 
+\begin_inset Formula $t=\langle1,6,5\rangle$
+\end_inset
+
+和 
+\begin_inset Formula $u=\langle3,1\rangle$
+\end_inset
+
+的交织。
+\end_layout
+
+\begin_layout Standard
+交织的递归定义可以描述为
+\end_layout
+
+\begin_layout Standard
+L1: 
+\begin_inset Formula $\langle\rangle\textrm{ interleaves }(t,u)≡(t=\langle\rangle\land u=\langle\rangle)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+L2: 
+\begin_inset Formula $s\textrm{ interleaves }(t,u)≡s\textrm{ interleaves }(u,t)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+L3: 
+\begin_inset Formula $(\langle x\rangle\mathcircumflex s)\textrm{ interleaves }(t,u)≡(t\neq\langle\rangle\land t_{0}=x\land s\textrm{ interleaves }(t',u))\lor(u\neq\langle\rangle\land u_{0}=x\land s\textrm{ interleaves }(t,u'))$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+下标
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $[]$
+\end_inset
+
+算子，通常用
+\begin_inset Formula $s[i]$
+\end_inset
+
+表示
+\begin_inset Formula $s$
+\end_inset
+
+中的第
+\begin_inset Formula $i$
+\end_inset
+
+个元素
+\end_layout
+
+\begin_layout Standard
+L1: 
+\begin_inset Formula $s[0]=s_{0}\land s[i+1]=s'[i]$
+\end_inset
+
+ 只要 
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\noun off
+\color none
+\lang english
+
+\begin_inset Formula $s\neq\langle\rangle$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+L2:
+\begin_inset Formula $(f^{*}(s))[i]=f(s[i])$
+\end_inset
+
+其中 
+\begin_inset Formula $i<\#s$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+逆转
+\end_layout
+
+\begin_layout Standard
+用
+\begin_inset Formula $\overline{s}$
+\end_inset
+
+ 表示
+\begin_inset Formula $s$
+\end_inset
+
+的逆转，例如 
+\begin_inset Formula $\overline{\langle37,5,3\rangle}=\langle3,5,37\rangle$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+逆转的定义如下：
+\end_layout
+
+\begin_layout Standard
+L1: 
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\noun off
+\color none
+\lang english
+
+\begin_inset Formula $\overline{\langle\rangle}=\langle\rangle$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+L2: 
+\begin_inset Formula $\overline{\langle x\rangle}=\langle x\rangle$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+L3: 
+\begin_inset Formula $\overline{s\mathcircumflex t}=\overline{t}\mathcircumflex\overline{s}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+其他性质可自行推导
+\end_layout
+
+\begin_layout Subsubsection
+选择
+\end_layout
+
+\begin_layout Standard
+如果
+\begin_inset Formula $s$
+\end_inset
+
+是一个对序列，则定义
+\begin_inset Formula $s\downarrow x$
+\end_inset
+
+是
+\begin_inset Formula $s$
+\end_inset
+
+中所有以
+\begin_inset Formula $x$
+\end_inset
+
+为第一个元素的对的第二个元素组成的序列。例如
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $s=\langle a.7,b.9,a.8,c.0\rangle$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+则有 
+\begin_inset Formula $s\downarrow a=\langle7,8\rangle$
+\end_inset
+
+ 而且 
+\begin_inset Formula $s\downarrow d=\langle\rangle$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+选择的定义如下
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+L1: 
+\begin_inset Formula $\langle\rangle\downarrow x=\langle\rangle$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+L2: 
+\begin_inset Formula $(\langle y.z\rangle\mathcircumflex t)\downarrow x=t\downarrow x$
+\end_inset
+
+ 注意 
+\begin_inset Formula $y\neq x$
+\end_inset
+
+ 
+\begin_inset Newline newline
+\end_inset
+
+L3: 
+\begin_inset Formula $(\langle x.z\rangle\mathcircumflex t)\downarrow x=\langle z\rangle\mathcircumflex(t\downarrow x)$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+组合
+\end_layout
+
+\begin_layout Standard
+我们用
+\begin_inset Formula $\surd$
+\end_inset
+
+来表示某个迹的终止符号，所以
+\begin_inset Formula $\surd$
+\end_inset
+
+只能出现在迹的末尾。组合的写法是
+\begin_inset Formula $s;t$
+\end_inset
+
+，如果
+\begin_inset Formula $\surd$
+\end_inset
+
+不出现在
+\begin_inset Formula $s$
+\end_inset
+
+的末尾，则
+\begin_inset Formula $t$
+\end_inset
+
+没法启动
+\end_layout
+
+\begin_layout Standard
+L1: 
+\begin_inset Formula $s;t=s$
+\end_inset
+
+ 如果 
+\begin_inset Formula $\lnot(\langle\surd\rangle)\textrm{in}s$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+如果
+\begin_inset Formula $\surd$
+\end_inset
+
+出现在
+\begin_inset Formula $s$
+\end_inset
+
+的末尾，则
+\begin_inset Formula $\surd$
+\end_inset
+
+会被移除，并且将
+\begin_inset Formula $t$
+\end_inset
+
+追加到
+\begin_inset Formula $s$
+\end_inset
+
+里去
+\end_layout
+
+\begin_layout Standard
+L2:
+\begin_inset Formula $(s\mathcircumflex\langle\surd\rangle);t=s\mathcircumflex t$
+\end_inset
+
+其中
+\begin_inset Formula $\surd$
+\end_inset
+
+不在
+\begin_inset Formula $s$
+\end_inset
+
+中
+\end_layout
+
+\begin_layout Standard
+符号
+\begin_inset Formula $\surd$
+\end_inset
+
+可以看成是组合运算的一种胶水，如果它不出现，
+\begin_inset Formula $t$
+\end_inset
+
+就没法被粘住。
+\end_layout
+
+\begin_layout Standard
+如果
+\begin_inset Formula $\surd$
+\end_inset
+
+出现在某个迹的中间，为了完整性的需要，我们规定
+\begin_inset Formula $\surd$
+\end_inset
+
+后的所有符号都会被忽略，例如
+\end_layout
+
+\begin_layout Standard
+L2A: 
+\begin_inset Formula $(s\mathcircumflex\langle\surd\rangle\mathcircumflex u);t=s-t$
+\end_inset
+
+ 其中
+\begin_inset Formula $\surd$
+\end_inset
+
+不在
+\begin_inset Formula $s$
+\end_inset
+
+中
+\end_layout
+
+\begin_layout Standard
+尽管这个组合算子大家可能不太熟悉，但它还是符合几条常见的代数定律。
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+L3: 
+\begin_inset Formula $s;(t;u)=(s;t);u$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+L4A: 
+\begin_inset Formula $s\le t\Rightarrow((u;s)\le(u;t))$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+L4B: 
+\begin_inset Formula $s\le t\Rightarrow((s;u)\le(t;u))$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+L5: 
+\begin_inset Formula $\langle\rangle;t=\langle\rangle$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+L6: 
+\begin_inset Formula $\langle\surd\rangle;t=t$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+显然，
+\begin_inset Formula $\surd$
+\end_inset
+
+是组合运算的左单位元，如果
+\begin_inset Formula $\surd$
+\end_inset
+
+永远只会出现在迹的末尾，则
+\begin_inset Formula $\surd$
+\end_inset
+
+还是右单位元。
+\end_layout
+
+\begin_layout Subsection
+规范
+\end_layout
+
+\begin_layout Standard
+规范是对进程行为的一种规范化说明，通过一些变量以及这些变量所表达的含义来描述一个行为。例如，一个电压放大器，其输入电压的范围是1伏以内，输出电压是原电压的10倍
+。它的规范是：
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\textrm{AMP10}=(0\le v\le1\Rightarrow|v'-10v|\le1)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+这里
+\begin_inset Formula $v$
+\end_inset
+
+是输入电压，
+\begin_inset Formula $v'$
+\end_inset
+
+是输出电压。
+\end_layout
+
+\begin_layout Standard
+下面我们会用
+\begin_inset Formula $tr$
+\end_inset
+
+表示进程任意时刻的迹。
+\end_layout
+
+\begin_layout Description
+举例
+\end_layout
+
+\begin_layout Enumerate
+自动售卖机的老板不想亏本，于是他规定了送出巧克力的块数不能超过投入的硬币数，最好就少于投入的硬币数
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $\textrm{NOLOSS}=(\#(tr\upharpoonright{choc})\le\#(tr\upharpoonright{coin})$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+后面我们会用 
+\begin_inset Formula $tr\downarrow c=\#(tr\upharpoonright{c})$
+\end_inset
+
+来表示c在tr中出现的次数。（选择算子可以这样用的吗）
+\end_layout
+
+\begin_layout Enumerate
+顾客希望投多少硬币就出多少巧克力，最好就多给我（多多益善）
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $\textrm{FAIR1}=((tr\downarrow coin)\le(tr\downarrow choc)+1)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+好吧，公平一点
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $\textrm{VMSPEC}=NOLOSS\land FAIR1=(0\le((tr\downarrow coin)=(tr\downarrow choc))\le1)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+不允许连续接收3枚硬币
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $\textrm{VMCFIX}=(\lnot\langle in1p\rangle^{3})\textrm{in}tr$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+满足
+\end_layout
+
+\begin_layout Standard
+如果
+\begin_inset Formula $P$
+\end_inset
+
+是一个满足规范
+\begin_inset Formula $S$
+\end_inset
+
+的产品，那我们就称为
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\textrm{P sat S}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+也就是说，P中任意可能的行为，都可以由
+\begin_inset Formula $S$
+\end_inset
+
+来描述。换句话说，如果
+\begin_inset Formula $S$
+\end_inset
+
+中所有的变量取值都是来自于
+\begin_inset Formula $P$
+\end_inset
+
+的观察，那么
+\begin_inset Formula $S$
+\end_inset
+
+为真，正式一点的描述就是
+\begin_inset Formula $\forall tr\bullet tr\in traces(P)\Rightarrow S$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $true$
+\end_inset
+
+表示对产品不施加任何限制，也就是说，任何产品都可以满足
+\begin_inset Formula $true$
+\end_inset
+
+，即使是坏的
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\textrm{L1: P sat true}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+如果一个产品满足两种规范，那也满足这两种规范的合并，也就是说如果 
+\begin_inset Formula $\textrm{P sat S}$
+\end_inset
+
+并且P sat T，则P sat S 
+\begin_inset Formula $\land$
+\end_inset
+
+T
+\end_layout
+
+\begin_layout Standard
+显然，可以推广到如果 
+\begin_inset Formula $\forall n\bullet(P\textrm{ sat }S(n))$
+\end_inset
+
+则有 
+\begin_inset Formula $P\textrm{ sat }(\forall n\bullet S(n))$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+还有规范之间的蕴含关系，例如，如果 
+\begin_inset Formula $\textrm{P sat S}\land S\Rightarrow T$
+\end_inset
+
+ 则有 
+\begin_inset Formula $\textrm{P sat T}$
+\end_inset
+
+ 。下面我们会简述为
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\textrm{P sat S}$
+\end_inset
+
+
+\begin_inset Formula $\Rightarrow T$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+证明
+\end_layout
+
+\begin_layout Standard
+产品的设计必须要满足规范的描述。这一章我们使用一些数学论证方面的知识，来讨论如何确保进程
+\begin_inset Formula $P$
+\end_inset
+
+符合它的规格。
+\end_layout
+
+\begin_layout Standard
+当我们将描述协程
+\begin_inset Formula $S(tr)$
+\end_inset
+
+的时候，表示
+\begin_inset Formula $S$
+\end_inset
+
+中包含自由变量
+\begin_inset Formula $tr$
+\end_inset
+
+，但不限于这一个。我们这里写明
+\begin_inset Formula $tr$
+\end_inset
+
+的真正原因是在于说明
+\begin_inset Formula $tr$
+\end_inset
+
+可以被别的更复杂的表达式代换，例如
+\begin_inset Formula $S(tr')$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $STOP$
+\end_inset
+
+进程满足的规范是
+\end_layout
+
+\begin_layout Standard
+L4A: 
+\begin_inset Formula $\textrm{STOP sat }(tr=\langle\rangle)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $(c\to P)$
+\end_inset
+
+进程一开始是空的，后面每一个迹都是以
+\begin_inset Formula $c$
+\end_inset
+
+开始，而且尾部也是
+\begin_inset Formula $P$
+\end_inset
+
+的一个迹，所以这个尾部可由进程
+\begin_inset Formula $P$
+\end_inset
+
+的任何规范描述，
+\begin_inset Formula $\textrm{L4B: If P sat S(tr)}$
+\end_inset
+
+ 
+\begin_inset Formula $\textrm{then}(c\to P)\textrm{ sat }(tr=\langle\rangle\lor(tr_{0}=c\land S(tr')))$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+两个前缀的进程可以这样描述
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\textrm{L4C: If P sat S(tr)}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\textrm{then }(c\to d\to P)\textrm{ sat }(tr\le\langle c,d\rangle\lor(tr\ge\langle c,d\rangle\land S(tr')))$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+选择性进程
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\textrm{L4D: If P sat S(tr) and Q sat T(tr)}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\textrm{then }(c\to P|d\to Q)\textrm{ sat }(tr=\langle\rangle\lor(tr_{0}=c\land S(tr'))\lor(tr_{0}=d\land T(tr')))$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+通用定义，如果
+\begin_inset Formula $\forall x:B\bullet(P(x)\textrm{ sat }S(tr,x))$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+则有
+\begin_inset Formula $(x:B\to P(x))$
+\end_inset
+
+ 
+\begin_inset Formula $\textrm{sat }(tr=\langle\rangle\lor(tr_{0}\in B\land S(tr',tr_{0})))$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+L5更简单，如果
+\begin_inset Formula $tr$
+\end_inset
+
+是进程
+\begin_inset Formula $P/s$
+\end_inset
+
+的迹，则 
+\begin_inset Formula $s\mathcircumflex tr$
+\end_inset
+
+ 是进程
+\begin_inset Formula $P$
+\end_inset
+
+的迹，所以有，如果 
+\begin_inset Formula $P$
+\end_inset
+
+ sat 
+\begin_inset Formula $S(tr)$
+\end_inset
+
+ 而且 
+\begin_inset Formula $s\in traces(P)$
+\end_inset
+
+，则有
+\begin_inset Formula $P/s$
+\end_inset
+
+ sat 
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\noun off
+\color none
+\lang english
+
+\begin_inset Formula $S(s\mathcircumflex tr)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+递归定义的进程
+\end_layout
+
+\begin_layout Standard
+L6: 如果 
+\begin_inset Formula $F(x)$
+\end_inset
+
+是卫式的，而且 
+\begin_inset Formula $STOP$
+\end_inset
+
+ sat 
+\begin_inset Formula $S$
+\end_inset
+
+，而且
+\begin_inset Formula $(X\textrm{ sat }S)\Rightarrow(F(X)\textrm{ sat }S)$
+\end_inset
+
+ 则有 
+\begin_inset Formula $\mu X\bullet F(X)$
+\end_inset
+
+ sat 
+\begin_inset Formula $S$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+并发性
+\end_layout
+
+\begin_layout Standard
+引言
+\end_layout
+
+\begin_layout Standard
+交互作用
+\end_layout
+
+\begin_layout Standard
+法则
+\end_layout
+
+\begin_layout Standard
+实施
+\end_layout
+
+\begin_layout Standard
+迹
+\end_layout
+
+\begin_layout Standard
+
+\end_layout
+
+\begin_layout Standard
+== 并发性 == === 法则 === === 实施 === === 迹 ===
+\end_layout
+
+\begin_layout Standard
+== 例图 == == 举例：哲学家就餐问题 == === 字母表 === === 行为 === === 死锁 === === 死锁不存在的证明
+ === === 无限抢先 ===
+\end_layout
+
+\begin_layout Standard
+== 符号变换 == === 法则 === === 进程标记 === === 实施 === === 多重标记 ===
+\end_layout
+
+\begin_layout Standard
+== 功能描述 == == 确定性进程的数学理论 == === 基本定义 === === 不动点理论 === === 唯一解 ===
+\end_layout
+
+\begin_layout Standard
+= 非确定性 = == 引言 == == 非确定性的或算子 == === 法则 === === 实施 === === 迹 ===
+\end_layout
+
+\begin_layout Standard
+== 一般选择 == === 法则 === === 实施 === === 迹 ===
+\end_layout
+
+\begin_layout Standard
+== 拒绝集 == === 法则 ===
+\end_layout
+
+\begin_layout Standard
+== 屏蔽 == === 法则 === === 实施 === === 迹 === === 示意图 ===
+\end_layout
+
+\begin_layout Standard
+== 穿插 == === 法则 === === 迹和拒绝集 ===
+\end_layout
+
+\begin_layout Standard
+== 描述 == === 证明 ===
+\end_layout
+
+\begin_layout Standard
+== 发散性 == === 法则 === === 发散集 === == 非确定性进程的数学理论 ==
+\end_layout
+
+\begin_layout Standard
+= 通信 = == 引言 == == 输入和输出 == === 实施 === === 描述 ===
+\end_layout
+
+\begin_layout Standard
+== 通信 == == 导管 == === 法则 === === 实施 === === 活锁 === === 描述 === === 缓存和协议
+ ===
+\end_layout
+
+\begin_layout Standard
+== 附庸 == === 法则 === === 链接图 ===
+\end_layout
+
+\begin_layout Standard
+= 顺序进程 = == 引言 == == 法则 == == 数学处理 == === 非确定性进程 === === 确定性进程 === === 实施
+ === == 中断 == === 灾难 === === 重新启动 === === 交替 === === 备查点 === === 多重备查点 ===
+ === 实施 ===
+\end_layout
+
+\begin_layout Standard
+== 赋值 == === 法则 === === 描述 === === 实施 ===
+\end_layout
+
+\begin_layout Standard
+= 资源共享 = == 引言 == == 穿插式共享 == == 存储共享 == == 多重资源 == == 操作系统 == == 调度 ==
+\end_layout
+
+\begin_layout Standard
+= 讨论 = == 引言 == == 共享存储 == === 多流化 === === cobegin ...
+ coend === === 条件临界区 === === 管程 === === 管程嵌套 === === Ada^TM ===
+\end_layout
+
+\begin_layout Standard
+== 通信 == === 多重缓冲通道 === === 函数式多道处理 === === 无缓冲通信 === === 通信顺序进程 === ===
+ Occam ===
+\end_layout
+
+\begin_layout Standard
+== 数学模型 == === 通信系统演算 ===
+\end_layout
+
+\begin_layout Standard
+= Latex配置 =
+\end_layout
+
+\end_body
+\end_document
